@@ -1,0 +1,9 @@
+export CANVAS_BASE_URL="https://colostate.instructure.com"                                                                                                                                            ─╯
+export CANVAS_TOKEN="3716~KzvMZxWTXBEFt3GyVnTRTkuCQtxhyVztKea76BvVTTJzVyKzUPQefVFFv7GrF9Gf"
+python canvas_grade_calculator.py --course-id 210272 \
+  --weights '{"Homework":20, "Exam 1": 25, "Exam 2": 25, "Exam 3": 30}' --show-assignments
+
+
+python canvas_grade_calculator.py --all-courses
+python canvas_grade_calculator.py --all-courses --include-completed
+python canvas_grade_calculator.py --course-id 12345

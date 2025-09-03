@@ -1,0 +1,19 @@
+canvas:
+  base_url: https://example.instructure.com
+  token: EXAMPLE_API_TOKEN_DO_NOT_SHARE
+exclusions:
+  ids:
+    - 123456
+    - 654321
+  name_contains:
+    - "Sample Course"
+weights:
+  by_course_id:
+    '987654':
+      Homework: 20.0
+      Exam 1: 25.0
+      Exam 2: 25.0
+      Exam 3: 30.0
+final_policy:
+  default: missing_zero_upcoming_ignore
+
