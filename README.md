@@ -19,8 +19,20 @@ Requirements
 Install
 1) Create a virtual environment (optional but recommended)
    python -m venv .venv && source .venv/bin/activate
-2) Install dependencies from requirements.txt
+2) Option A: install deps only
    pip install -r requirements.txt
+3) Option B: pip install this project (recommended)
+   pip install .
+   # or for development
+   pip install -e .
+
+After installing with pip, use the CLI command:
+- canvas --help
+
+Tip: When installed as a CLI, replace usages of
+  python canvas_grade_calculator.py ...
+with
+  canvas ...
 
 Authentication
 You need your Canvas base URL and an API token with read access:
