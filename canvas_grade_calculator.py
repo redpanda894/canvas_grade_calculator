@@ -323,6 +323,60 @@ def load_config(path: Optional[str]) -> Dict[str, Any]:
     return data
 
 
+def discover_config_path(cli_path: Optional[str]) -> Optional[str]:
+    """
+    Determine which config file to load, in this order:
+      1) Explicit --config path (expanded)
+      2) $CANVAS_GRADE_CONFIG or $CANVAS_GRADE_CALCULATOR_CONFIG
+      3) $XDG_CONFIG_HOME/canvas-grade-calculator/config.yaml (or ~/.config/...)
+      4) ~/.canvas_grade_calculator.(yaml|yml|json)
+      5) ./config.(yaml|yml|json) in current working directory
+    Returns first existing path, else None.
+    """
+    candidates: List[str] = []
+
+    def add_if_set(env_var: str):
+        v = os.environ.get(env_var)
+        if v:
+            candidates.append(os.path.expanduser(v))
+
+    # 1) CLI path
+    if cli_path:
+        p = os.path.expanduser(cli_path)
+        return p if os.path.exists(p) else p  # allow load_config to raise if missing
+
+    # 2) Env var
+    add_if_set("CANVAS_GRADE_CONFIG")
+    add_if_set("CANVAS_GRADE_CALCULATOR_CONFIG")
+
+    # 3) XDG config
+    xdg_home = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
+    candidates.append(os.path.join(xdg_home, "canvas-grade-calculator", "config.yaml"))
+    candidates.append(os.path.join(xdg_home, "canvas-grade-calculator", "config.yml"))
+    candidates.append(os.path.join(xdg_home, "canvas-grade-calculator", "config.json"))
+
+    # 4) Home dotfiles
+    home = os.path.expanduser("~")
+    candidates.append(os.path.join(home, ".canvas_grade_calculator.yaml"))
+    candidates.append(os.path.join(home, ".canvas_grade_calculator.yml"))
+    candidates.append(os.path.join(home, ".canvas_grade_calculator.json"))
+
+    # 5) CWD
+    cwd = os.getcwd()
+    candidates.append(os.path.join(cwd, "config.yaml"))
+    candidates.append(os.path.join(cwd, "config.yml"))
+    candidates.append(os.path.join(cwd, "config.json"))
+
+    for p in candidates:
+        try:
+            if os.path.exists(p):
+                return p
+        except Exception:
+            # Ignore any bad paths
+            pass
+    return None
+
+
 def get_effective_weights(course_id: int, cli_weights: Optional[Dict[str, float]], cfg: Dict[str, Any]) -> Optional[Dict[str, float]]:
     # Precedence: CLI > config.by_course_id > config.default > None (fall back to Canvas)
     if cli_weights:
@@ -434,7 +488,12 @@ def parse_args():
     p.add_argument("--week", action="store_true", help="List assignments due in the next 7 days across your courses (sorted by due date, then course)")
     p.add_argument(
         "--config",
-        help="Path to YAML/JSON config file. If omitted, uses ./config.yaml when present.",
+        help=(
+            "Path to YAML/JSON config file. If omitted, discovery order is: "
+            "$CANVAS_GRADE_CONFIG / $CANVAS_GRADE_CALCULATOR_CONFIG, "
+            "$XDG_CONFIG_HOME/canvas-grade-calculator/config.yaml (or ~/.config/...), "
+            "~/.canvas_grade_calculator.(yaml|yml|json), then ./config.(yaml|yml|json)"
+        ),
     )
     p.add_argument("--exclude-course-ids", help="Comma-separated list of course IDs to exclude (e.g. '101,202,303')")
     p.add_argument("--exclude-name-contains", action="append", help="Exclude courses whose name contains this text (case-insensitive); can be provided multiple times")
@@ -474,8 +533,8 @@ def format_pct(x: Optional[float]) -> str:
 
 def main():
     args = parse_args()
-    # Prefer explicit --config; otherwise auto-load ./config.yaml if present
-    cfg_path = args.config if args.config else ("config.yaml" if os.path.exists("config.yaml") else None)
+    # Discover config via --config, env, XDG, home, or CWD
+    cfg_path = discover_config_path(args.config)
     cfg = load_config(cfg_path)
 
     # Resolve Canvas auth: CLI > config > ENV

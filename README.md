@@ -91,7 +91,7 @@ CLI Usage
 Key flags
 - --base-url: Canvas base URL
 - --token: Canvas API token
-- --config: path to YAML/JSON config (auto-loads ./config.yaml if present)
+- --config: path to YAML/JSON config. If omitted, discovery order is: $CANVAS_GRADE_CONFIG / $CANVAS_GRADE_CALCULATOR_CONFIG, $XDG_CONFIG_HOME/canvas-grade-calculator/config.yaml (or ~/.config/...), ~/.canvas_grade_calculator.(yaml|yml|json), then ./config.(yaml|yml|json)
 - --course-id: process a single course by ID
 - --course-name: select a single course by a name substring (errors if multiple match)
 - --all-courses: process all active courses in your account
